@@ -20,6 +20,10 @@ advanced solution and require more time and costs
 [AWS Best Best Pracices](https://aws.amazon.com/blogs/compute/resize-images-on-the-fly-with-amazon-s3-aws-lambda-and-amazon-api-gateway/).
 The provided idea is only about handling only images but Step Functions would solve the problem. 
 
+## Prerequisites
+- AWS IAM user with permissions to access S3 bucket (programmatic access)
+- AWS S3 bucket created with permissions to write and read files
+
 
 ## Installation
 
@@ -31,25 +35,29 @@ $ npm install
 
 ```bash
 # development
-$ npm run start
+$ yarn start
 
 # watch mode
-$ npm run start:dev
+$ yarn start:dev
 
 # production mode
-$ npm run start:prod
+$ yarn start:prod
 ```
 
 ## Test
 
 ```bash
 # unit tests
-$ npm run test
+$ yarn test test
 
 # e2e tests
-$ npm run test:e2e
+$ yarn test:e2e
 
 # test coverage
-$ npm run test:cov
+$ yarn test:cov
 ```
+
+## API documentation
+
+- API documentation
 

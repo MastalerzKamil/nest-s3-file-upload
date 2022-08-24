@@ -31,7 +31,9 @@ export class FileValidationMiddleware implements NestMiddleware {
     const uploadedFileStream = fs.createReadStream(filePath);
     const { mime } = await getMimeType(uploadedFileStream);
 
-    if (!(mime in AllowedMimeTypes)) {
+    const allowedMimeTypes = Object.values(AllowedMimeTypes);
+
+    if (!allowedMimeTypes.includes(mime)) {
       return res.status(HttpStatus.BAD_REQUEST).send({
         HttpCode: HttpStatus.BAD_REQUEST,
         Message: `File ${fileName} is not an allowed mime type.`,

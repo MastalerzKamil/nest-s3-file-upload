@@ -35,7 +35,7 @@ describe('AppController', () => {
         }),
       } as unknown as Response;
 
-      jest.spyOn(appService, 'uploadFile').mockImplementation(() => jest.fn());
+      jest.spyOn(appService, 'uploadFile').mockResolvedValue({} as any);
 
       expect(appController.upload('test.jpg', mockedResponse)).toEqual({
         HttpCode: HttpStatus.CREATED,

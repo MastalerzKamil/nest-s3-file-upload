@@ -2,7 +2,7 @@ import { FileValidationMiddleware } from './file-validation.middleware';
 import { HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import * as fs from 'fs';
-import * as mimeType from "stream-mime-type";
+import * as mimeType from 'stream-mime-type';
 
 describe('FileValidationMiddleware', () => {
   beforeAll(() => {
@@ -67,7 +67,7 @@ describe('FileValidationMiddleware', () => {
       .spyOn(fs, 'createReadStream')
       .mockReturnValue({} as unknown as fs.ReadStream);
     jest.spyOn(mimeType, 'getMimeType').mockResolvedValue({
-      mime: 'image/png',
+      mime: 'test',
     } as any);
     const middleware = new FileValidationMiddleware();
     const req = {
