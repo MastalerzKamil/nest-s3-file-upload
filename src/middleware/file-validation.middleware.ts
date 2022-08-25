@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { getMimeType } from 'stream-mime-type';
 import * as fs from 'fs';
-import { AllowedMimeTypes } from '../allowed-mime-types';
+import { AllowedMimeTypesEnum } from '../enums/allowed-mime-types.enum';
 
 @Injectable()
 export class FileValidationMiddleware implements NestMiddleware {
@@ -31,7 +31,7 @@ export class FileValidationMiddleware implements NestMiddleware {
     const uploadedFileStream = fs.createReadStream(filePath);
     const { mime } = await getMimeType(uploadedFileStream);
 
-    const allowedMimeTypes = Object.values(AllowedMimeTypes);
+    const allowedMimeTypes = Object.values(AllowedMimeTypesEnum);
 
     if (!allowedMimeTypes.includes(mime)) {
       return res.status(HttpStatus.BAD_REQUEST).send({

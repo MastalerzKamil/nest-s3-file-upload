@@ -2,13 +2,11 @@ import {
   BadRequestException,
   Controller,
   Get,
-  HttpStatus,
   Param,
   Put,
-  Res,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { Response } from 'express';
+import { UploadSuccessDto } from './dto/upload-success.dto';
 
 @Controller()
 export class AppController {
@@ -20,17 +18,17 @@ export class AppController {
   }
 
   @Put('/:fileName')
-  upload(
+  async upload(
     @Param('fileName') fileName: string,
-    @Res() response: Response,
-  ): object {
-    if (fileName === undefined)
-      throw new BadRequestException('File is required');
+  ): Promise<UploadSuccessDto> {
+    if (fileName === undefined) {
+      throw new BadRequestException(new Error('File name is required'));
+    }
 
-    this.appService.uploadFile(fileName);
-
-    return response
-      .status(HttpStatus.CREATED)
-      .send({ HttpCode: HttpStatus.CREATED, Message: 'File uploaded.' });
+    try {
+      return await this.appService.uploadContent(fileName);
+    } catch (error) {
+      throw new BadRequestException(new Error(error.message));
+    }
   }
 }

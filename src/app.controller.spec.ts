@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -25,21 +23,17 @@ describe('AppController', () => {
   });
 
   describe('upload', () => {
-    it('should return "File uploaded."', () => {
-      const mockedResponse: Response = {
-        status: jest.fn().mockReturnValue({
-          send: jest.fn().mockReturnValue({
-            HttpCode: HttpStatus.CREATED,
-            Message: 'File uploaded.',
-          }),
-        }),
-      } as unknown as Response;
+    it('should return "File uploaded."', async () => {
+      jest.spyOn(appService, 'uploadContent').mockResolvedValue({
+        bucketEndpoint: 'https://bucket.s3-website.eu-west-1.amazonaws.com',
+        imageUrl:
+          'https://bucket.s3-website.eu-west-1.amazonaws.com/files/file.png',
+      });
 
-      jest.spyOn(appService, 'uploadFile').mockResolvedValue({} as any);
-
-      expect(appController.upload('test.jpg', mockedResponse)).toEqual({
-        HttpCode: HttpStatus.CREATED,
-        Message: 'File uploaded.',
+      expect(await appController.upload('test.jpg')).toEqual({
+        bucketEndpoint: 'https://bucket.s3-website.eu-west-1.amazonaws.com',
+        imageUrl:
+          'https://bucket.s3-website.eu-west-1.amazonaws.com/files/file.png',
       });
     });
   });

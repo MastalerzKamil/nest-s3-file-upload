@@ -1,4 +1,4 @@
-export enum AllowedMimeTypes {
+export enum AllowedMimeTypesEnum {
   'application/pdf',
   'text/csv',
   'text/plain',
