@@ -110,7 +110,6 @@ export class AppService {
 
   createWriteStreamToS3 = async ({ Key, mime, filePath }) => {
     const pass = new stream.PassThrough();
-    const fileStat = await fs.promises.stat(filePath);
     return {
       writeStream: pass,
       uploadFinished: new Upload({
@@ -120,7 +119,6 @@ export class AppService {
           Key: Key,
           Body: pass,
           ContentType: mime,
-          ContentLength: fileStat.size,
         },
       }),
     };

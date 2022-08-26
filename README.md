@@ -10,6 +10,11 @@ save it in the S3 bucket. Due to requirement I couldn't use `multipart/form-data
 and load image into memory so the idea that came to my mind was using streams from 
 files in the disk instead of loading them into memory.
 
+## Known issues
+
+- Uploaded file is saved as broken in S3 bucket
+- the input is fileName, and it's taken as a stream from a disk in order to not overload memory.
+
 ## Other memory optimised solutions
 
 - I could use buffer in memory and then send it to the server. According to the [GitHub Gist](https://gist.github.com/jonilsonds9/efc228e34a298fa461d378f48ef67836)
