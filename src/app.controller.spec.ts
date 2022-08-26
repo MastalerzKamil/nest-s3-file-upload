@@ -24,17 +24,21 @@ describe('AppController', () => {
 
   describe('upload', () => {
     it('should return "File uploaded."', async () => {
-      jest.spyOn(appService, 'uploadContent').mockResolvedValue({
-        bucketEndpoint: 'https://bucket.s3-website.eu-west-1.amazonaws.com',
-        imageUrl:
-          'https://bucket.s3-website.eu-west-1.amazonaws.com/files/file.png',
-      });
+      jest.spyOn(appService, 'uploadContent').mockResolvedValue([
+        {
+          bucketEndpoint: 'https://bucket.s3-website.eu-west-1.amazonaws.com',
+          imageUrl:
+            'https://bucket.s3-website.eu-west-1.amazonaws.com/files/file.png',
+        },
+      ]);
 
-      expect(await appController.upload('test.jpg')).toEqual({
-        bucketEndpoint: 'https://bucket.s3-website.eu-west-1.amazonaws.com',
-        imageUrl:
-          'https://bucket.s3-website.eu-west-1.amazonaws.com/files/file.png',
-      });
+      expect(await appController.upload('test.jpg')).toEqual([
+        {
+          bucketEndpoint: 'https://bucket.s3-website.eu-west-1.amazonaws.com',
+          imageUrl:
+            'https://bucket.s3-website.eu-west-1.amazonaws.com/files/file.png',
+        },
+      ]);
     });
   });
 });

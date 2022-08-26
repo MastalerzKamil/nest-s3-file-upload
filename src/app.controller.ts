@@ -20,7 +20,7 @@ export class AppController {
   @Put('/:fileName')
   async upload(
     @Param('fileName') fileName: string,
-  ): Promise<UploadSuccessDto> {
+  ): Promise<UploadSuccessDto[]> {
     if (fileName === undefined) {
       throw new BadRequestException(new Error('File name is required'));
     }

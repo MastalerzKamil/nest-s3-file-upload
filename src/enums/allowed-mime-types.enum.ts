@@ -5,6 +5,4 @@ export enum AllowedMimeTypesEnum {
   'image/jpeg',
   'image/png',
   'image/gif',
-  'image/bmp',
-  'image/svg+xml',
 }

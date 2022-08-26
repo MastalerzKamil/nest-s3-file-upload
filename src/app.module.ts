@@ -16,7 +16,7 @@ import { FileValidationMiddleware } from './middleware/file-validation.middlewar
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(FileValidationMiddleware).forRoutes({
-      path: '/:fileName/:size',
+      path: '/:fileName',
       method: RequestMethod.PUT,
     });
   }

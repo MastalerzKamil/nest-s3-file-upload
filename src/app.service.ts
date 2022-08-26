@@ -1,97 +1,132 @@
 import { Injectable } from '@nestjs/common';
-import { createReadStream, ReadStream } from 'fs';
+import { ReadStream } from 'fs';
 import * as stream from 'stream';
-import * as AWS from 'aws-sdk';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import * as sharp from 'sharp';
 import { getMimeType } from 'stream-mime-type';
 import { UploadSuccessDto } from './dto/upload-success.dto';
+import * as fs from 'fs';
+import { ImageSizes } from './enums/image-sizes.enum';
 
 @Injectable()
 export class AppService {
-  private s3Client: AWS.S3;
+  private readonly s3Client: S3Client;
   private readonly bucket: string;
   private readonly url: string;
   constructor() {
-    this.s3Client = new AWS.S3({
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION,
-    });
     this.bucket = process.env.S3_BUCKET;
-    this.url = `https://${process.env.S3_BUCKET}.s3-website.${process.env.REGION}.amazonaws.com`;
+    this.url = `https://${process.env.REGION}.s3.amazonaws.com/${process.env.S3_BUCKET}`;
+    this.s3Client = new S3Client({
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      },
+      region: process.env.REGION,
+    });
   }
 
   getHello(): string {
     return 'Hello World!';
   }
 
-  async uploadContent(fileName: string): Promise<UploadSuccessDto> {
+  async uploadContent(fileName: string): Promise<UploadSuccessDto[]> {
     const filePath = `${process.env.SOURCE_DIRECTORY}/${fileName}`;
-    const readStream = createReadStream(filePath);
+    const readStream = fs.createReadStream(filePath);
     const { mime } = await getMimeType(readStream);
     const match = mime.split('/');
 
     if (match[0] === 'image') {
-      return await this.resizeAndUploadImage(fileName, readStream);
+      return await this.resizeAndUploadImage(fileName, readStream, mime);
     }
 
-    return await this.uploadFile(fileName, readStream);
-  }
-
-  async uploadFile(
-    fileName: string,
-    readStream: ReadStream,
-  ): Promise<UploadSuccessDto> {
-    const fileKey = `files/${fileName}`;
-
-    return await this.sendToS3(fileKey, readStream);
+    return await this.uploadFile(fileName, readStream, mime);
   }
 
   async resizeAndUploadImage(
     fileName: string,
     readStream: ReadStream,
-  ): Promise<UploadSuccessDto> {
+    mime: string,
+  ): Promise<UploadSuccessDto[]> {
     const filePath = `${process.env.SOURCE_DIRECTORY}/${fileName}`;
     const sharpInstance = await sharp(filePath);
     const imageMetadata = await sharpInstance.metadata();
-    const { width, height } = imageMetadata;
 
-    return {
-      bucketEndpoint: this.url,
-      imageUrl: `${this.url}/fileKey`,
-    };
+    const result: UploadSuccessDto[] = [];
+
+    const sizes = Object.keys(ImageSizes).map((key) => ImageSizes[key]);
+
+    for (let index = 0; index < sizes.length; index++) {
+      const [width, height] = sizes[index].split('x');
+      const fileNameWithoutExtension = fileName.split('.');
+      const fileKey = `images/${width}x${height}/${fileNameWithoutExtension[2]}.${imageMetadata.format}`;
+      const parsedWidth = parseInt(width, 10);
+      const parsedHeight = parseInt(height, 10);
+      const sharpStream = this.createStreamToSharp({
+        width: parsedWidth,
+        height: parsedHeight,
+        format: imageMetadata.format,
+      });
+
+      const { writeStream, uploadFinished } = await this.createWriteStreamToS3({
+        Key: fileKey,
+        mime: mime,
+        filePath,
+      });
+      readStream.pipe(sharpStream).pipe(writeStream);
+      await uploadFinished;
+
+      result.push({
+        bucketEndpoint: this.url,
+        imageUrl: `${this.url}/${fileKey}`,
+      });
+    }
+
+    return result;
   }
 
-  async sendToS3(
-    fileKey: string,
+  async uploadFile(
+    fileName: string,
     readStream: ReadStream,
-  ): Promise<UploadSuccessDto> {
-    const { mime } = await getMimeType(readStream);
+    mime: string,
+  ): Promise<UploadSuccessDto[]> {
+    const fileKey = `files/${fileName}`;
+    const filePath = `${process.env.SOURCE_DIRECTORY}/${fileName}`;
 
-    const writeStreamToS3 = ({ Bucket, Key }) => {
-      const pass = new stream.PassThrough();
-      return {
-        writeStream: pass,
-        uploadFinished: this.s3Client
-          .upload({
-            Body: pass,
-            Bucket,
-            ContentType: mime,
-            Key,
-          })
-          .promise(),
-      };
-    };
-    const { writeStream, uploadFinished } = writeStreamToS3({
-      Bucket: this.bucket,
+    const { uploadFinished } = await this.createWriteStreamToS3({
       Key: fileKey,
+      mime: mime,
+      filePath,
     });
 
-    readStream.pipe(writeStream);
-    await uploadFinished;
-    return {
-      bucketEndpoint: this.url,
-      imageUrl: `${this.url}/${fileKey}`,
-    };
+    await uploadFinished.done();
+    return [
+      {
+        bucketEndpoint: this.url,
+        imageUrl: `${this.url}/${fileKey}`,
+      },
+    ];
   }
+
+  createWriteStreamToS3 = async ({ Key, mime, filePath }) => {
+    const pass = new stream.PassThrough();
+    const fileStat = await fs.promises.stat(filePath);
+    return {
+      writeStream: pass,
+      uploadFinished: new Upload({
+        client: this.s3Client,
+        params: {
+          Bucket: this.bucket,
+          Key: Key,
+          Body: pass,
+          ContentType: mime,
+          ContentLength: fileStat.size,
+        },
+      }),
+    };
+  };
+
+  createStreamToSharp = ({ width, height, format }) => {
+    return sharp().resize(width, height).toFormat(format);
+  };
 }
